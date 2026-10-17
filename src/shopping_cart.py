@@ -1,3 +1,10 @@
+PROMO_CODES = {
+    "SALE10": 10,
+    "SALE20": 20,
+    "HALF": 50,
+    "HOT": 90,
+}
+
 class CartError(Exception):
     pass
 
@@ -13,14 +20,22 @@ class NotEnoughStockError(CartError):
 class ItemNotInCartError(CartError):
     pass
 
+class InvalidPromoCodeError(CartError):
+    pass
+
 class ShoppingCart:
     def __init__(self, products):
         self._products = {p.id: p for p in products}
         self._items = {}
+        self._discount_percent = 0
 
     @property
     def items(self):
         return dict(self._items)
+
+    @property
+    def discount_percent(self):
+        return self._discount_percent
 
     @staticmethod
     def _check_quantity(quantity):
@@ -51,4 +66,9 @@ class ShoppingCart:
 
     def get_total(self):
         subtotal = sum(self._products[pid].price * qty for pid, qty in self._items.items())
-        return round(subtotal, 2)
+        return round(subtotal * (100 - self._discount_percent) / 100, 2)
+
+    def apply_promo_code(self, code):
+        if not isinstance(code, str) or code.strip().upper() not in PROMO_CODES:
+            raise InvalidPromoCodeError(f"Промокод {code!r} недействителен")
+        self._discount_percent = PROMO_CODES[code.strip().upper()]
